@@ -362,6 +362,8 @@ class BuildModule(BaseCliModule):
 
         self.parser.add_option("--test", dest="test", action="store_true",
                 help="use current branch HEAD instead of latest package tag")
+        self.parser.add_option("--test-uncommitted", dest="test_uncommitted", action="store_true",
+                help="like --test, but includes unstaged or uncommitted files")
         self.parser.add_option("--ignore-missing-config", action="store_true",
                 help=("Acknowledge working in non-initialized project "
                       "and silencing all related warnings"))
@@ -411,6 +413,7 @@ class BuildModule(BaseCliModule):
         kwargs = {
             'dist': self.options.dist,
             'test': self.options.test,
+            'test_uncommitted': self.options.test_uncommitted,
             'ignore_missing_config': self.options.ignore_missing_config,
             'offline': self.options.offline,
             'auto_install': self.options.auto_install,
@@ -433,6 +436,8 @@ class BuildModule(BaseCliModule):
         if self.options.srpm and self.options.rpm:
             error_out("Cannot combine --srpm and --rpm")
         if self.options.test and self.options.tag:
+            error_out("Cannot build test version of specific tag.")
+        if self.options.test_uncommitted and self.options.tag:
             error_out("Cannot build test version of specific tag.")
         if self.options.quiet and self.options.verbose:
             error_out("Cannot set --quiet and --verbose at the same time.")

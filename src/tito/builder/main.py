@@ -101,6 +101,9 @@ class BuilderBase(object):
         self.test = self._get_optional_arg(kwargs, 'test', False)
         # Allow a builder arg to override the test setting passed in, used by
         # releasers in their config sections.
+        self.test_uncommitted = self._get_optional_arg(kwargs, 'test_uncommitted', False)
+        if self.test_uncommitted:
+            self.test = True
         if args and 'test' in args:
             self.test = True
 
@@ -418,7 +421,7 @@ class Builder(ConfigObject, BuilderBase):
 
         with chdir(find_git_root()):
             self.git_commit_id = get_build_commit(tag=self.build_tag,
-                test=self.test)
+                test=self.test, test_uncommitted=self.test_uncommitted)
 
         self.relative_project_dir = get_relative_project_dir(
             project_name=self.project_name, commit=self.git_commit_id)

@@ -788,9 +788,11 @@ def get_relative_project_dir_cwd(git_root):
     return relative
 
 
-def get_build_commit(tag, test=False):
+def get_build_commit(tag, test=False, test_uncommitted=False):
     """ Return the git commit we should build. """
-    if test:
+    if test_uncommitted:
+        return get_uncommitted_commit(".")
+    elif test:
         return get_latest_commit(".")
     else:
         tag_sha1 = run_command(
@@ -845,6 +847,30 @@ def get_latest_commit(path="."):
     commit_id = run_command("git log --pretty=format:%%H --max-count=1 %s" % path)
     return commit_id
 
+
+
+def get_uncommitted_commit(path="."):
+    """ Return the git commit for the current uncommitted tree. """
+    git_dir = run_command("git rev-parse --git-dir")
+    index_file = os.path.join(git_dir, "tito-temp-index")
+    old_index_file = os.environ.get("GIT_INDEX_FILE")
+    try:
+        os.environ["GIT_INDEX_FILE"] = index_file
+        if os.path.exists(os.path.join(git_dir, "index")):
+            import shutil
+            shutil.copy(os.path.join(git_dir, "index"), index_file)
+        run_command("git add -A %s" % path)
+        tree = run_command("git write-tree")
+        head = run_command("git rev-parse HEAD")
+        commit = run_command("git commit-tree %s -m 'tito temp commit' -p %s" % (tree, head))
+        return commit
+    finally:
+        if os.path.exists(index_file):
+            os.remove(index_file)
+        if old_index_file is not None:
+            os.environ["GIT_INDEX_FILE"] = old_index_file
+        elif "GIT_INDEX_FILE" in os.environ:
+            del os.environ["GIT_INDEX_FILE"]
 
 def get_commit_timestamp(sha1_or_tag):
     """
