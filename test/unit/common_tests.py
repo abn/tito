@@ -26,7 +26,7 @@ from blessed import Terminal
 # Pure unit tests for tito's common module
 from tito.common import (replace_version, find_spec_like_file, increase_version,
     search_for, compare_version, run_command_print, find_wrote_in_rpmbuild_output,
-    render_cheetah, increase_zstream, reset_release, find_file_with_extension,
+    render_cheetah, increase_zstream, reset_release, find_file_with_extension, get_uncommitted_commit, run_command,
     normalize_class_name, extract_sha1, munge_specfile,
     munge_setup_macro, get_project_name,
     _out)
@@ -243,6 +243,22 @@ class CommonTests(unittest.TestCase):
 
         for (tag, package) in TAGS:
             self.assertEqual(package, get_project_name(tag, None))
+
+    def test_get_uncommitted_commit(self):
+        import tempfile, os
+        d = tempfile.mkdtemp()
+        try:
+            os.chdir(d)
+            run_command("git init")
+            run_command("touch .gitignore")
+            run_command("git add .gitignore && git commit -m 'Initial commit'")
+            with open("testfile", "w") as f:
+                f.write("uncommitted")
+            commit = get_uncommitted_commit()
+            self.assertTrue(len(commit) == 40)
+        finally:
+            os.chdir(titodir)
+            run_command("rm -rf %s" % d)
 
 
 class CheetahRenderTest(unittest.TestCase):
